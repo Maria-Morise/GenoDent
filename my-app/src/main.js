@@ -352,8 +352,15 @@ function createVariantResult(variant) {
   if (details.childElementCount > 0) article.append(details)
 
   const genes = collectGenes(variant.transcript_consequences)
-  const geneHeading = createTextElement('h3', 'Associated genes')
+  const geneHeading = createTextElement('h3', 'Genes in Ensembl annotations')
   article.append(geneHeading)
+
+  article.append(
+    createTextElement(
+      'p',
+      'These genes are included in Ensembl transcript annotations for this variant. This does not establish that they are associated with the selected oral disease.',
+    ),
+  )
 
   if (genes.length === 0) {
     article.append(
