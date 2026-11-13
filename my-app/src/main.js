@@ -86,6 +86,7 @@ const appState = {
   geneNames: [],
   diseaseLabel: 'the selected oral disease',
   evidenceCount: 0,
+  evidenceSearched: false,
 }
 
 SUPPORTED_DISEASES.forEach(({ id, label }) => {
@@ -105,6 +106,7 @@ variantInput.addEventListener('input', () => {
   appState.variantId = ''
   appState.geneNames = []
   appState.evidenceCount = 0
+  appState.evidenceSearched = false
   updateFindingsSummary()
 })
 
@@ -113,6 +115,7 @@ evidenceForm.elements.disease.addEventListener('change', () => {
   evidenceStatus.textContent = ''
   evidenceResults.replaceChildren()
   appState.evidenceCount = 0
+  appState.evidenceSearched = false
   appState.diseaseLabel = getDiseaseLabel(evidenceForm.elements.disease.value)
   updateFindingsSummary()
 })
@@ -192,6 +195,7 @@ evidenceForm.addEventListener('submit', async (event) => {
 
     appState.diseaseLabel = getDiseaseLabel(disease)
     appState.evidenceCount = result.count
+    appState.evidenceSearched = true
     if (result.count === 0) {
       evidenceStatus.textContent =
         `No PubMed records matched this ${appState.diseaseLabel} search for ${variantId}. ` +
@@ -222,6 +226,7 @@ evidenceForm.addEventListener('submit', async (event) => {
     console.error('PubMed literature search failed:', error)
     if (requestSequence !== evidenceSearchSequence) return
     appState.evidenceCount = 0
+    appState.evidenceSearched = false
     if (error instanceof PubMedInputError) {
       evidenceStatus.textContent = error.message
     } else if (error.status === 429) {
@@ -246,6 +251,7 @@ function updateFindingsSummary() {
     geneNames: appState.geneNames,
     diseaseLabel: appState.diseaseLabel,
     evidenceCount: appState.evidenceCount,
+    evidenceSearched: appState.evidenceSearched,
   })
 }
 

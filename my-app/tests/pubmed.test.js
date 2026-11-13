@@ -116,6 +116,7 @@ test('explains findings in simple language with uncertainty if no evidence is av
     geneNames: ['MMP9'],
     diseaseLabel: 'periodontal disease',
     evidenceCount: 0,
+    evidenceSearched: true,
   })
 
   assert.match(explanation, /rs28934568 was entered/i)
@@ -130,9 +131,23 @@ test('explains the available evidence without claiming a proven association', ()
     geneNames: ['TNF'],
     diseaseLabel: 'oral cancer',
     evidenceCount: 3,
+    evidenceSearched: true,
   })
 
   assert.match(explanation, /3 matching citations/i)
   assert.match(explanation, /search matches, not proof/i)
   assert.match(explanation, /not estimate an individual’s exact disease risk/i)
+})
+
+test('explains when a PubMed search has not yet been completed', () => {
+  const explanation = buildPlainLanguageExplanation({
+    variantId: 'rs1800629',
+    geneNames: ['TNF'],
+    diseaseLabel: 'periodontal disease',
+    evidenceCount: 0,
+    evidenceSearched: false,
+  })
+
+  assert.match(explanation, /has not yet been completed/i)
+  assert.match(explanation, /Search PubMed/i)
 })
