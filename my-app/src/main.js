@@ -15,7 +15,7 @@ document.querySelector('#app').innerHTML = `
     <p class="eyebrow">Genetics and oral health</p>
     <h1>Welcome to GenoDent</h1>
     <p class="intro">
-      A place to explore genetic variants associated with oral diseases.
+      Explore genetic variant annotations and search scientific literature related to oral health.
     </p>
     <form id="variant-form" class="variant-field">
       <label for="variant-id">Genetic variant ID</label>
