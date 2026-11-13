@@ -4,6 +4,7 @@ import test from 'node:test'
 import { buildPlainLanguageExplanation } from '../src/explanation.js'
 import {
   buildPubMedQuery,
+  isValidRsId,
   PubMedInputError,
   searchPubMed,
   SUPPORTED_DISEASES,
@@ -137,6 +138,19 @@ test('explains the available evidence without claiming a proven association', ()
   assert.match(explanation, /3 matching citations/i)
   assert.match(explanation, /search matches, not proof/i)
   assert.match(explanation, /not estimate an individual’s exact disease risk/i)
+})
+
+test('accepts valid rsID formats', () => {
+  assert.equal(isValidRsId('rs1800629'), true)
+  assert.equal(isValidRsId('RS1800629'), true)
+  assert.equal(isValidRsId(' rs1800629 '), true)
+})
+
+test('rejects invalid rsID formats', () => {
+  assert.equal(isValidRsId('hello123'), false)
+  assert.equal(isValidRsId('rs'), false)
+  assert.equal(isValidRsId('1800629'), false)
+  assert.equal(isValidRsId(''), false)
 })
 
 test('explains when a PubMed search has not yet been completed', () => {

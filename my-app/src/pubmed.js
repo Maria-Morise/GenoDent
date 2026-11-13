@@ -68,9 +68,14 @@ export class PubMedInputError extends Error {
   }
 }
 
+export function isValidRsId(variantId) {
+  return typeof variantId === 'string' && /^rs\d+$/i.test(variantId.trim())
+}
+
 export function buildPubMedQuery(variantId, disease) {
   const normalizedId = variantId.trim().toLowerCase()
-  if (!/^rs\d+$/.test(normalizedId)) {
+
+  if (!isValidRsId(variantId)) {
     throw new PubMedInputError(
       'Enter a variant identifier in rsID format, such as rs28934568.',
     )

@@ -1,6 +1,7 @@
 import './style.css'
 import { buildPlainLanguageExplanation } from './explanation.js'
 import {
+  isValidRsId,
   PubMedInputError,
   searchPubMed,
   SUPPORTED_DISEASES,
@@ -124,7 +125,15 @@ variantForm.addEventListener('submit', async (event) => {
   event.preventDefault()
 
   const variantId = variantInput.value.trim()
+
   if (!variantId) return
+
+  if (!isValidRsId(variantId)) {
+    lookupStatus.textContent =
+      'Enter a valid variant identifier in rsID format, such as rs28934568.'
+    variantResults.replaceChildren()
+    return
+  }
 
   const requestSequence = ++variantLookupSequence
   variantForm.querySelector('button').disabled = true
