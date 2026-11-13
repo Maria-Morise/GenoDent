@@ -1,4 +1,5 @@
 import './style.css'
+import { buildPlainLanguageExplanation } from './explanation.js'
 import {
   PubMedInputError,
   searchPubMed,
@@ -34,6 +35,12 @@ document.querySelector('#app').innerHTML = `
       class="variant-results"
       aria-label="Variant lookup results"
     ></section>
+    <section class="findings-summary" aria-labelledby="findings-heading">
+      <h2 id="findings-heading">What this means</h2>
+      <p id="findings-summary-text" class="findings-summary-text">
+        Enter a variant ID and search the literature to see the current findings and uncertainty.
+      </p>
+    </section>
     <section class="evidence-section" aria-labelledby="evidence-heading">
       <h2 id="evidence-heading">Scientific literature</h2>
       <p class="evidence-intro">
@@ -71,8 +78,15 @@ const variantResults = document.querySelector('#variant-results')
 const evidenceForm = document.querySelector('#evidence-form')
 const evidenceStatus = document.querySelector('#evidence-status')
 const evidenceResults = document.querySelector('#evidence-results')
+const findingsSummaryText = document.querySelector('#findings-summary-text')
 let variantLookupSequence = 0
 let evidenceSearchSequence = 0
+const appState = {
+  variantId: '',
+  geneNames: [],
+  diseaseLabel: 'the selected oral disease',
+  evidenceCount: 0,
+}
 
 SUPPORTED_DISEASES.forEach(({ id, label }) => {
   const option = document.createElement('option')
@@ -88,12 +102,19 @@ variantInput.addEventListener('input', () => {
   variantResults.replaceChildren()
   evidenceStatus.textContent = ''
   evidenceResults.replaceChildren()
+  appState.variantId = ''
+  appState.geneNames = []
+  appState.evidenceCount = 0
+  updateFindingsSummary()
 })
 
 evidenceForm.elements.disease.addEventListener('change', () => {
   evidenceSearchSequence += 1
   evidenceStatus.textContent = ''
   evidenceResults.replaceChildren()
+  appState.evidenceCount = 0
+  appState.diseaseLabel = getDiseaseLabel(evidenceForm.elements.disease.value)
+  updateFindingsSummary()
 })
 
 variantForm.addEventListener('submit', async (event) => {
@@ -123,12 +144,20 @@ variantForm.addEventListener('submit', async (event) => {
     if (requestSequence !== variantLookupSequence) return
     if (!Array.isArray(data) || data.length === 0) {
       lookupStatus.textContent = `Ensembl returned no variant data for "${variantId}".`
+      appState.variantId = variantId
+      appState.geneNames = []
+      appState.evidenceCount = 0
+      updateFindingsSummary()
       return
     }
 
     data.forEach((variant) => variantResults.append(createVariantResult(variant)))
+    appState.variantId = variantId
+    appState.geneNames = collectGeneNames(data)
+    appState.evidenceCount = appState.evidenceCount || 0
     lookupStatus.textContent = `Ensembl returned ${data.length} variant record${data.length === 1 ? '' : 's'} for ${variantId}.`
     variantResults.append(createSourceNote())
+    updateFindingsSummary()
   } catch (error) {
     console.error('Ensembl variant lookup failed:', error)
     if (requestSequence !== variantLookupSequence) return
@@ -161,10 +190,13 @@ evidenceForm.addEventListener('submit', async (event) => {
     const result = await searchPubMed(variantId, disease)
     if (requestSequence !== evidenceSearchSequence) return
 
+    appState.diseaseLabel = getDiseaseLabel(disease)
+    appState.evidenceCount = result.count
     if (result.count === 0) {
       evidenceStatus.textContent =
-        `No PubMed records matched this ${getDiseaseLabel(disease)} search for ${variantId}. ` +
+        `No PubMed records matched this ${appState.diseaseLabel} search for ${variantId}. ` +
         'Evidence is insufficient based on this search; this does not establish that no evidence exists.'
+      updateFindingsSummary()
       return
     }
 
@@ -172,6 +204,7 @@ evidenceForm.addEventListener('submit', async (event) => {
       evidenceStatus.textContent =
         `PubMed reported ${result.count} matching record${result.count === 1 ? '' : 's'}, but citation details were unavailable.`
       evidenceResults.append(createPubMedSearchLink(result.query))
+      updateFindingsSummary()
       return
     }
 
@@ -184,9 +217,11 @@ evidenceForm.addEventListener('submit', async (event) => {
       `PubMed returned ${shownCount} of ${result.count} matching citation${result.count === 1 ? '' : 's'}. ` +
       'These search matches have not been assessed for study quality or whether findings establish an association.'
     evidenceResults.append(createPubMedSearchLink(result.query))
+    updateFindingsSummary()
   } catch (error) {
     console.error('PubMed literature search failed:', error)
     if (requestSequence !== evidenceSearchSequence) return
+    appState.evidenceCount = 0
     if (error instanceof PubMedInputError) {
       evidenceStatus.textContent = error.message
     } else if (error.status === 429) {
@@ -199,10 +234,20 @@ evidenceForm.addEventListener('submit', async (event) => {
       evidenceStatus.textContent =
         'Could not retrieve literature from PubMed. Check your connection and try again.'
     }
+    updateFindingsSummary()
   } finally {
     submitButton.disabled = false
   }
 })
+
+function updateFindingsSummary() {
+  findingsSummaryText.textContent = buildPlainLanguageExplanation({
+    variantId: appState.variantId,
+    geneNames: appState.geneNames,
+    diseaseLabel: appState.diseaseLabel,
+    evidenceCount: appState.evidenceCount,
+  })
+}
 
 function getRequestErrorMessage(status, variantId) {
   if (status === 400) {
@@ -220,6 +265,16 @@ function getRequestErrorMessage(status, variantId) {
 function getDiseaseLabel(disease) {
   return SUPPORTED_DISEASES.find((item) => item.id === disease)?.label.toLowerCase() ??
     'selected oral disease'
+}
+
+function collectGeneNames(variants = []) {
+  return [...new Set(
+    variants.flatMap((variant) =>
+      collectGenes(variant.transcript_consequences)
+        .map((gene) => gene.symbol)
+        .filter(Boolean),
+    ),
+  )]
 }
 
 function createCitationCard(record) {

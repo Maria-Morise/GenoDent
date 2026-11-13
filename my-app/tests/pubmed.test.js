@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
+import { buildPlainLanguageExplanation } from '../src/explanation.js'
 import {
   buildPubMedQuery,
   PubMedInputError,
@@ -107,4 +108,31 @@ test('reports malformed PubMed search responses', async () => {
     ),
     /unexpected search response/,
   )
+})
+
+test('explains findings in simple language with uncertainty if no evidence is available', () => {
+  const explanation = buildPlainLanguageExplanation({
+    variantId: 'rs28934568',
+    geneNames: ['MMP9'],
+    diseaseLabel: 'periodontal disease',
+    evidenceCount: 0,
+  })
+
+  assert.match(explanation, /rs28934568 was entered/i)
+  assert.match(explanation, /MMP9/i)
+  assert.match(explanation, /insufficient|not enough evidence/i)
+  assert.match(explanation, /exact disease risk|diagnosis/i)
+})
+
+test('explains the available evidence without claiming a proven association', () => {
+  const explanation = buildPlainLanguageExplanation({
+    variantId: 'rs1800629',
+    geneNames: ['TNF'],
+    diseaseLabel: 'oral cancer',
+    evidenceCount: 3,
+  })
+
+  assert.match(explanation, /3 matching citations/i)
+  assert.match(explanation, /search matches, not proof/i)
+  assert.match(explanation, /not estimate an individual’s exact disease risk/i)
 })
