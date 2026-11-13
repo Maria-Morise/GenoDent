@@ -19,7 +19,7 @@ export function buildPlainLanguageExplanation({
 
   const geneText =
     geneNames.length > 0
-      ? `The available variant information links this variant to ${formatList(geneNames)}.`
+      ? `Ensembl returned gene annotations for ${formatList(geneNames)}. These annotations describe the variant's genomic context and do not establish an association with ${diseaseLabel}.`
       : 'The available variant information does not clearly list a gene, so the gene association is uncertain.'
 
   let evidenceText

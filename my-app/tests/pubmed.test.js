@@ -122,6 +122,8 @@ test('explains findings in simple language with uncertainty if no evidence is av
 
   assert.match(explanation, /rs28934568 was entered/i)
   assert.match(explanation, /MMP9/i)
+  assert.match(explanation, /gene annotations/i)
+  assert.match(explanation, /do not establish an association/i)
   assert.match(explanation, /insufficient|not enough evidence/i)
   assert.match(explanation, /exact disease risk|diagnosis/i)
 })
@@ -136,6 +138,8 @@ test('explains the available evidence without claiming a proven association', ()
   })
 
   assert.match(explanation, /3 matching citations/i)
+  assert.match(explanation, /gene annotations/i)
+  assert.match(explanation, /do not establish an association/i)
   assert.match(explanation, /search matches, not proof/i)
   assert.match(explanation, /not estimate an individual’s exact disease risk/i)
 })
