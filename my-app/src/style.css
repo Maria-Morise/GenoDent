@@ -387,3 +387,29 @@ h1 {
     margin-top: 8px;
   }
 }
+
+.disclaimer {
+  max-width: 720px;
+  margin-top: 24px;
+  padding: 16px 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.disclaimer strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--color-ink);
+}
+
+.variant-source {
+  display: inline-block;
+  margin: 0 0 16px;
+  color: var(--color-accent);
+  font-size: 0.9rem;
+  font-weight: 600;
+}

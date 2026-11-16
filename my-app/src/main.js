@@ -17,6 +17,12 @@ document.querySelector('#app').innerHTML = `
     <p class="intro">
       Explore genetic variant annotations and search scientific literature related to oral health.
     </p>
+    <aside class="disclaimer" aria-label="Important disclaimer">
+      <strong>For educational and research purposes only.</strong>
+      GenoDent is not a diagnostic tool and does not provide medical advice
+      or personal disease-risk predictions. Variant annotations and literature
+      search matches do not establish a genetic association.
+    </aside>
     <form id="variant-form" class="variant-field">
       <label for="variant-id">Genetic variant ID</label>
       <input
@@ -336,6 +342,16 @@ function createVariantResult(variant) {
   const article = document.createElement('article')
   article.className = 'variant-result'
   article.append(createTextElement('h2', variant.id || 'Variant record'))
+  if (variant.id) {
+    const sourceLink = document.createElement('a')
+    sourceLink.className = 'variant-source'
+    sourceLink.href =
+      `https://www.ensembl.org/Homo_sapiens/Variation/Explore?v=${encodeURIComponent(variant.id)}`
+    sourceLink.target = '_blank'
+    sourceLink.rel = 'noopener noreferrer'
+    sourceLink.textContent = 'View this variant in Ensembl'
+    article.append(sourceLink)
+  }
 
   const details = document.createElement('dl')
   const location =
