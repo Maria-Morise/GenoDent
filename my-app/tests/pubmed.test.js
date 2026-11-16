@@ -95,6 +95,34 @@ test('reuses a cached result for a repeated PubMed search', async () => {
   assert.equal(requestCount, 2)
 })
 
+test('serializes simultaneous PubMed requests', async () => {
+  let activeRequests = 0
+  let maximumActiveRequests = 0
+
+  const fetcher = async () => {
+    activeRequests += 1
+    maximumActiveRequests = Math.max(
+      maximumActiveRequests,
+      activeRequests,
+    )
+
+    await new Promise((resolve) => setTimeout(resolve, 20))
+
+    activeRequests -= 1
+
+    return jsonResponse({
+      esearchresult: { count: '0', idlist: [] },
+    })
+  }
+
+  await Promise.all([
+    searchPubMed('rs987654322', 'periodontal', fetcher),
+    searchPubMed('rs987654323', 'periodontal', fetcher),
+  ])
+
+  assert.equal(maximumActiveRequests, 1)
+})
+
 test('returns an empty result without requesting citation details', async () => {
   let requestCount = 0
   const result = await searchPubMed('rs28934568', 'oralCancer', async () => {

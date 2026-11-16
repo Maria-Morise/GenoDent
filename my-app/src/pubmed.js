@@ -174,7 +174,31 @@ function cacheSearchResult(query, result) {
   })
 }
 
-async function fetchJson(url, fetcher) {
+const MIN_REQUEST_INTERVAL_MS = 350
+let lastRequestStartedAt = 0
+let requestQueue = Promise.resolve()
+
+function fetchJson(url, fetcher) {
+  const request = requestQueue.then(async () => {
+    const elapsed = Date.now() - lastRequestStartedAt
+    const waitTime = Math.max(0, MIN_REQUEST_INTERVAL_MS - elapsed)
+
+    if (waitTime > 0) {
+      await new Promise((resolve) => setTimeout(resolve, waitTime))
+    }
+
+    lastRequestStartedAt = Date.now()
+
+    return performFetchJson(url, fetcher)
+  })
+
+  // Keep the queue usable even if an individual request fails.
+  requestQueue = request.catch(() => {})
+
+  return request
+}
+
+async function performFetchJson(url, fetcher) {
   const response = await fetcher(url, {
     headers: { Accept: 'application/json' },
   })
