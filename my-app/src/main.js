@@ -1,6 +1,6 @@
 import './style.css'
 import { buildPlainLanguageExplanation } from './explanation.js'
-import { fetchWithTimeout } from './fetch-with-timeout.js'
+import { fetchJsonWithTimeout } from './fetch-with-timeout.js'
 import {
   isValidRsId,
   PubMedInputError,
@@ -148,7 +148,7 @@ variantForm.addEventListener('submit', async (event) => {
   variantResults.replaceChildren()
 
   try {
-    const response = await fetchWithTimeout(
+    const { response, data } = await fetchJsonWithTimeout(
       `${ENSEMBL_VEP_URL}${encodeURIComponent(variantId)}?content-type=application/json`,
       { headers: { Accept: 'application/json' } },
     )
@@ -159,7 +159,6 @@ variantForm.addEventListener('submit', async (event) => {
       return
     }
 
-    const data = await response.json()
     if (requestSequence !== variantLookupSequence) return
     if (!Array.isArray(data) || data.length === 0) {
       lookupStatus.textContent = `Ensembl returned no variant data for "${variantId}".`

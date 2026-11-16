@@ -1,4 +1,4 @@
-import { fetchWithTimeout } from './fetch-with-timeout.js'
+import { fetchJsonWithTimeout } from './fetch-with-timeout.js'
 
 const EUTILS_BASE_URL = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils'
 const MAX_RESULTS = 10
@@ -201,7 +201,7 @@ function fetchJson(url, fetcher) {
 }
 
 async function performFetchJson(url, fetcher) {
-  const response = await fetchWithTimeout(
+  const { response, data } = await fetchJsonWithTimeout(
     url,
     {
       headers: { Accept: 'application/json' },
@@ -215,7 +215,7 @@ async function performFetchJson(url, fetcher) {
     throw error
   }
 
-  return response.json()
+  return data
 }
 
 function normalizeCitation(citation) {

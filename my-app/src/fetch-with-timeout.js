@@ -1,4 +1,4 @@
-export async function fetchWithTimeout(
+export async function fetchJsonWithTimeout(
   url,
   options = {},
   fetcher = fetch,
@@ -11,10 +11,18 @@ export async function fetchWithTimeout(
   }, timeoutMs)
 
   try {
-    return await fetcher(url, {
+    const response = await fetcher(url, {
       ...options,
       signal: controller.signal,
     })
+
+    if (!response.ok) {
+      return { response, data: null }
+    }
+
+    const data = await response.json()
+
+    return { response, data }
   } catch (error) {
     if (controller.signal.aborted) {
       const timeoutError = new Error(
