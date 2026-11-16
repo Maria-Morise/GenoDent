@@ -67,6 +67,34 @@ test('retrieves and normalizes citations from saved real PubMed responses', asyn
   assert.equal(requestUrls[1].searchParams.get('id'), '26750615')
 })
 
+test('reuses a cached result for a repeated PubMed search', async () => {
+  const responses = [searchFixture, summaryFixture]
+  let requestCount = 0
+
+  const fetcher = async () => {
+    requestCount += 1
+    return jsonResponse(responses.shift())
+  }
+
+  const firstResult = await searchPubMed(
+    'rs987654321',
+    'periodontal',
+    fetcher,
+  )
+
+  const secondResult = await searchPubMed(
+    'rs987654321',
+    'periodontal',
+    async () => {
+      requestCount += 1
+      throw new Error('The cached search should not make another request.')
+    },
+  )
+
+  assert.deepEqual(secondResult, firstResult)
+  assert.equal(requestCount, 2)
+})
+
 test('returns an empty result without requesting citation details', async () => {
   let requestCount = 0
   const result = await searchPubMed('rs28934568', 'oralCancer', async () => {
@@ -95,7 +123,7 @@ test('rejects non-rsID input before sending a request', async () => {
 
 test('reports PubMed HTTP errors', async () => {
   await assert.rejects(
-    searchPubMed('rs1800629', 'periodontal', async () =>
+    searchPubMed('rs1800630', 'periodontal', async () =>
       jsonResponse({}, 429),
     ),
     (error) => error.status === 429,
@@ -104,7 +132,7 @@ test('reports PubMed HTTP errors', async () => {
 
 test('reports malformed PubMed search responses', async () => {
   await assert.rejects(
-    searchPubMed('rs1800629', 'periodontal', async () =>
+    searchPubMed('rs1800631', 'periodontal', async () =>
       jsonResponse({ unexpected: true }),
     ),
     /unexpected search response/,

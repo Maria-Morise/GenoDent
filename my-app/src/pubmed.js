@@ -1,5 +1,9 @@
 const EUTILS_BASE_URL = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils'
 const MAX_RESULTS = 10
+const CACHE_TTL_MS = 5 * 60 * 1000
+const MAX_CACHE_ENTRIES = 100
+
+const searchCache = new Map()
 
 export const SUPPORTED_DISEASES = [
   {
@@ -91,6 +95,17 @@ export function buildPubMedQuery(variantId, disease) {
 
 export async function searchPubMed(variantId, disease, fetcher = fetch) {
   const query = buildPubMedQuery(variantId, disease)
+
+  // Reuse a recent result if the same search was already completed.
+  const cached = searchCache.get(query)
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.result
+  }
+
+  if (cached) {
+    searchCache.delete(query)
+  }
+
   const searchParams = new URLSearchParams({
     db: 'pubmed',
     term: query,
@@ -114,7 +129,11 @@ export async function searchPubMed(variantId, disease, fetcher = fetch) {
 
   const count = Number(searchResult.count)
   const ids = searchResult.idlist
-  if (ids.length === 0) return { count, query, records: [] }
+  if (ids.length === 0) {
+    const result = { count, query, records: [] }
+    cacheSearchResult(query, result)
+    return result
+  }
 
   const summaryParams = new URLSearchParams({
     db: 'pubmed',
@@ -136,7 +155,23 @@ export async function searchPubMed(variantId, disease, fetcher = fetch) {
     .filter(Boolean)
     .map(normalizeCitation)
 
-  return { count, query, records }
+  const result = { count, query, records }
+  cacheSearchResult(query, result)
+
+  return result
+}
+
+function cacheSearchResult(query, result) {
+  // Keep the cache limited to avoid unlimited memory growth.
+  if (searchCache.size >= MAX_CACHE_ENTRIES) {
+    const oldestKey = searchCache.keys().next().value
+    searchCache.delete(oldestKey)
+  }
+
+  searchCache.set(query, {
+    result,
+    expiresAt: Date.now() + CACHE_TTL_MS,
+  })
 }
 
 async function fetchJson(url, fetcher) {
