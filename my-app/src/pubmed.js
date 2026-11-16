@@ -1,3 +1,5 @@
+import { fetchWithTimeout } from './fetch-with-timeout.js'
+
 const EUTILS_BASE_URL = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils'
 const MAX_RESULTS = 10
 const CACHE_TTL_MS = 5 * 60 * 1000
@@ -199,9 +201,13 @@ function fetchJson(url, fetcher) {
 }
 
 async function performFetchJson(url, fetcher) {
-  const response = await fetcher(url, {
-    headers: { Accept: 'application/json' },
-  })
+  const response = await fetchWithTimeout(
+    url,
+    {
+      headers: { Accept: 'application/json' },
+    },
+    fetcher,
+  )
 
   if (!response.ok) {
     const error = new Error(`PubMed request failed (HTTP ${response.status}).`)

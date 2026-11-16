@@ -1,5 +1,6 @@
 import './style.css'
 import { buildPlainLanguageExplanation } from './explanation.js'
+import { fetchWithTimeout } from './fetch-with-timeout.js'
 import {
   isValidRsId,
   PubMedInputError,
@@ -147,7 +148,7 @@ variantForm.addEventListener('submit', async (event) => {
   variantResults.replaceChildren()
 
   try {
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `${ENSEMBL_VEP_URL}${encodeURIComponent(variantId)}?content-type=application/json`,
       { headers: { Accept: 'application/json' } },
     )
@@ -179,8 +180,14 @@ variantForm.addEventListener('submit', async (event) => {
   } catch (error) {
     console.error('Ensembl variant lookup failed:', error)
     if (requestSequence !== variantLookupSequence) return
-    lookupStatus.textContent =
-      'Could not retrieve variant information from Ensembl. Check your connection and try again.'
+
+    if (error.name === 'TimeoutError') {
+      lookupStatus.textContent =
+        'Ensembl took too long to respond. Please try again.'
+    } else {
+      lookupStatus.textContent =
+        'Could not retrieve variant information from Ensembl. Check your connection and try again.'
+    }
   } finally {
     variantForm.querySelector('button').disabled = false
   }
@@ -244,6 +251,9 @@ evidenceForm.addEventListener('submit', async (event) => {
     appState.evidenceSearched = false
     if (error instanceof PubMedInputError) {
       evidenceStatus.textContent = error.message
+    } else if (error.name === 'TimeoutError') {
+      evidenceStatus.textContent =
+        'PubMed took too long to respond. Please try again.'
     } else if (error.status === 429) {
       evidenceStatus.textContent =
         'PubMed is temporarily rate-limiting requests. Please try again shortly.'
