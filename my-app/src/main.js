@@ -1,5 +1,6 @@
 import './style.css'
 import { buildPlainLanguageExplanation } from './explanation.js'
+import { renderEducationGuide } from './education.js'
 import { fetchJsonWithTimeout } from './fetch-with-timeout.js'
 import {
   isValidRsId,
@@ -11,8 +12,29 @@ import {
 document.querySelector('#app').innerHTML = `
   <header class="site-header">
     <a class="brand" href="/" aria-label="GenoDent home">GenoDent</a>
+
+    <nav class="main-navigation" aria-label="Main navigation">
+      <button
+        type="button"
+        class="nav-button active"
+        id="genetic-nav"
+        aria-pressed="true"
+      >
+        Genetic Research
+      </button>
+      <button
+        type="button"
+        class="nav-button"
+        id="education-nav"
+        aria-pressed="false"
+      >
+        Oral Health Education
+      </button>
+    </nav>
   </header>
+
   <main class="page-content">
+    <section id="genetic-page" class="page-view">
     <p class="eyebrow">Genetics and oral health</p>
     <h1>Welcome to GenoDent</h1>
     <p class="intro">
@@ -72,11 +94,69 @@ document.querySelector('#app').innerHTML = `
         aria-label="PubMed literature search results"
       ></section>
     </section>
+    </section>
+
+    <section id="education-page" class="page-view" hidden>
+      <p class="eyebrow">Learn about oral health</p>
+
+      <h1>Oral Health Education</h1>
+
+      <p class="intro">
+        Explore common oral health conditions, learn about their signs and
+        symptoms, and understand when you should seek professional dental care.
+      </p>
+
+      <aside class="disclaimer" aria-label="Educational disclaimer">
+        <strong>Important information</strong>
+        This section is intended for educational purposes only. It does not
+        provide a clinical diagnosis or replace an examination by a qualified
+        dental professional.
+      </aside>
+
+      <div class="education-welcome">
+        <h2>Explore the educational tools</h2>
+        <p>
+          Learn about oral conditions, explore educational images and get
+          guidance on when to seek professional dental care.
+        </p>
+      </div>
+
+      <div
+        id="education-guide"
+        class="education-grid"
+        aria-label="Oral condition educational guides"
+      ></div>
+    </section>
   </main>
   <footer class="site-footer">
     <p>GenoDent is an early-stage project.</p>
   </footer>
 `
+
+renderEducationGuide(document.querySelector('#education-guide'))
+
+const geneticNav = document.querySelector('#genetic-nav')
+const educationNav = document.querySelector('#education-nav')
+const geneticPage = document.querySelector('#genetic-page')
+const educationPage = document.querySelector('#education-page')
+
+function showPage(page) {
+  const showGeneticPage = page === 'genetic'
+
+  geneticPage.hidden = !showGeneticPage
+  educationPage.hidden = showGeneticPage
+
+  geneticNav.classList.toggle('active', showGeneticPage)
+  educationNav.classList.toggle('active', !showGeneticPage)
+
+  geneticNav.setAttribute('aria-pressed', String(showGeneticPage))
+  educationNav.setAttribute('aria-pressed', String(!showGeneticPage))
+
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+geneticNav.addEventListener('click', () => showPage('genetic'))
+educationNav.addEventListener('click', () => showPage('education'))
 
 const ENSEMBL_VEP_URL = 'https://rest.ensembl.org/vep/human/id/'
 const variantForm = document.querySelector('#variant-form')
